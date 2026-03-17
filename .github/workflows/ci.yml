@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: pcf/package-lock.json
+
+      - name: Install dependencies
+        working-directory: pcf
+        run: npm ci
+
+      - name: Lint
+        working-directory: pcf
+        run: npm run lint
+
+      - name: Run tests
+        working-directory: pcf
+        run: npm test -- --coverage
+
+  build:
+    runs-on: windows-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: pcf/package-lock.json
+
+      - name: Install npm dependencies
+        working-directory: pcf
+        run: npm ci
+
+      - name: Build solution
+        working-directory: solution
+        run: dotnet build --configuration Release
+
+      - name: Verify solution ZIPs
+        run: |
+          $zips = Get-ChildItem -Path releases -Filter *.zip
+          if ($zips.Count -lt 2) {
+            Write-Error "Expected at least 2 ZIP files in releases/, found $($zips.Count)"
+            exit 1
+          }
+          foreach ($zip in $zips) {
+            if ($zip.Length -lt 100KB) {
+              Write-Error "$($zip.Name) is only $($zip.Length) bytes — expected 100KB+"
+              exit 1
+            }
+            Write-Host "$($zip.Name): $([math]::Round($zip.Length / 1KB))KB"
+          }
+        shell: pwsh

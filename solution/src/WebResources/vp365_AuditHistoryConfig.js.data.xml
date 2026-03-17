@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WebResource>
+  <WebResourceId>{f00abe73-b412-4a0b-b0cc-6f1bcd393845}</WebResourceId>
+  <Name>vp365_AuditHistoryConfig</Name>
+  <FileName>/WebResources/vp365_AuditHistoryConfig.js</FileName>
+  <DisplayName>vp365.ai | Audit History Config</DisplayName>
+  <Description>Default configuration for Field Audit History PCF control. Edit to customize per-table field rules, panel width, and filter options.</Description>
+  <WebResourceType>3</WebResourceType>
+  <IntroducedVersion>2.1.0.0</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+</WebResource>

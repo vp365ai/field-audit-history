@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Build output
+out/
+obj/
+bin/
+coverage/
+generated/
+!pcf/FieldAuditHistory/generated/
+
+# IDE
+.vs/
+.vscode/
+*.suo
+*.user
+*.csproj.user
+*.pcfproj.user
+*.cdsproj.user
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude/
