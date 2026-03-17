@@ -1,0 +1,100 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PowerAppsTargetsPath>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\PowerApps</PowerAppsTargetsPath>
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" />
+  <Import Project="$(PowerAppsTargetsPath)\Microsoft.PowerApps.VisualStudio.Solution.props" Condition="Exists('$(PowerAppsTargetsPath)\Microsoft.PowerApps.VisualStudio.Solution.props')" />
+
+  <PropertyGroup>
+    <ProjectGuid>34d30956-67a1-42ba-9e9e-6aa86035226b</ProjectGuid>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <!--Remove TargetFramework when this is available in 16.1-->
+    <TargetFramework>net462</TargetFramework>
+    <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
+    <SolutionRootPath>src</SolutionRootPath>
+  </PropertyGroup>
+
+  <!-- 
+    Solution Packager overrides, un-comment to use: SolutionPackagerType (Managed, Unmanaged, Both)
+    Solution Localization Control, if you want to enabled localization of your solution, un-comment SolutionPackageEnableLocalization and set the value to true. - Requires use of -loc flag on Solution Clone or Sync
+  -->
+  <PropertyGroup>
+    <SolutionPackageType>Both</SolutionPackageType>
+    <SolutionPackageEnableLocalization>false</SolutionPackageEnableLocalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.PowerApps.MSBuild.Solution" Version="1.*" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ExcludeDirectories Include="$(MSBuildThisFileDirectory)\.gitignore" />
+    <ExcludeDirectories Include="$(MSBuildThisFileDirectory)\bin\**" />
+    <ExcludeDirectories Include="$(MSBuildThisFileDirectory)\obj\**" />
+    <ExcludeDirectories Include="$(MSBuildThisFileDirectory)\*.cdsproj" />
+    <ExcludeDirectories Include="$(MSBuildThisFileDirectory)\*.cdsproj.user" />
+    <ExcludeDirectories Include="$(MSBuildThisFileDirectory)\*.sln" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)\**" Exclude="@(ExcludeDirectories)" />
+    <Content Include="$(SolutionPackageZipFilePath)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\pcf\FieldAuditHistoryPCF.pcfproj" />
+  </ItemGroup>
+
+  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
+  <Import Project="$(PowerAppsTargetsPath)\Microsoft.PowerApps.VisualStudio.Solution.targets" Condition="Exists('$(PowerAppsTargetsPath)\Microsoft.PowerApps.VisualStudio.Solution.targets')" />
+
+  <!--
+    POST-BUILD: Auto-copy solution ZIPs to /releases/ with proper naming.
+
+    Reads the version from Solution.xml and produces:
+      releases/vp365_FieldAuditHistory_{VERSION}_managed.zip
+      releases/vp365_FieldAuditHistory_{VERSION}_unmanaged.zip
+
+    The Dataverse solution unique name is vp365_FieldAuditHistory (underscores
+    are allowed). The ZIP filename uses the same underscore convention.
+
+    This ensures:
+    - Every build produces correctly named release artifacts
+    - No manual copy/rename step needed
+    - Version in filename always matches Solution.xml
+  -->
+  <Target Name="CopyToReleases" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <!-- Read version from Solution.xml -->
+    <XmlPeek XmlInputPath="$(MSBuildThisFileDirectory)src\Other\Solution.xml"
+             Query="/ImportExportXml/SolutionManifest/Version/text()">
+      <Output TaskParameter="Result" PropertyName="SolutionVersion" />
+    </XmlPeek>
+
+    <!-- ZIP filename prefix: vp365_ControlName (readable, underscore-separated) -->
+    <PropertyGroup>
+      <ReleasePrefix>vp365_FieldAuditHistory</ReleasePrefix>
+    </PropertyGroup>
+
+    <!-- Ensure releases directory exists -->
+    <MakeDir Directories="$(MSBuildThisFileDirectory)..\releases" />
+
+    <!-- Copy and rename unmanaged ZIP -->
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)bin\Release\FieldAuditHistory.zip"
+          DestinationFiles="$(MSBuildThisFileDirectory)..\releases\$(ReleasePrefix)_$(SolutionVersion)_unmanaged.zip"
+          OverwriteReadOnlyFiles="true" />
+
+    <!-- Copy and rename managed ZIP -->
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)bin\Release\FieldAuditHistory_managed.zip"
+          DestinationFiles="$(MSBuildThisFileDirectory)..\releases\$(ReleasePrefix)_$(SolutionVersion)_managed.zip"
+          OverwriteReadOnlyFiles="true" />
+
+    <Message Importance="high"
+             Text="Copied solution ZIPs v$(SolutionVersion) to releases/ as $(ReleasePrefix)_$(SolutionVersion)_managed/unmanaged.zip" />
+  </Target>
+
+</Project>

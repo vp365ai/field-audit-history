@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  ============================================================================
+  ControlManifest.Input.xml — vp365.ai | Field Audit History (v3.4.2)
+  ============================================================================
+
+  PURPOSE:
+  This PCF control injects small "history" icons next to EVERY audited field
+  on a model-driven app form. Clicking an icon opens a side panel showing
+  the audit change history for that specific field.
+
+  HOW IT WORKS:
+  - The control is bound to ONE dedicated text field (the "host" field).
+  - The host field renders a small status indicator ("Audit tracking active").
+  - All OTHER fields on the form keep their native controls untouched.
+  - The control uses React Portals to inject icons into field label areas.
+  - It auto-detects which fields have auditing enabled via entity metadata.
+
+  SETUP:
+  1. Create a text field on your entity (e.g., vp365_audithost).
+  2. Add that field to the form.
+  3. Bind this PCF control to that field.
+  4. All audited fields on the form will automatically get history icons.
+
+  REQUIREMENTS:
+  - Auditing must be enabled at the org level.
+  - Auditing must be enabled on the target entity.
+  - Auditing must be enabled on individual fields you want to track.
+  - The user must have prvReadRecordAuditHistory + prvReadAuditSummary.
+  ============================================================================
+-->
+<manifest>
+  <control namespace="vp365"
+           constructor="FieldAuditHistory"
+           version="3.4.2"
+           display-name-key="vp365.ai | Field Audit History"
+           description-key="Injects audit history icons next to all audited fields on the form. Bind to a dedicated text field to activate."
+           control-type="virtual">
+
+    <!-- No external service calls — all API calls are to the local Dataverse instance -->
+    <external-service-usage enabled="false">
+    </external-service-usage>
+
+    <!--
+      HOST FIELD (boundField):
+      The control must be bound to a field to exist on the form.
+      This field's native rendering is replaced by a small status indicator.
+      Create a dedicated SingleLine.Text field (e.g., vp365_audithost) for this.
+      All other fields on the form remain native and untouched.
+    -->
+    <property name="boundField"
+              display-name-key="Host Field"
+              description-key="Bind to a dedicated text field — this field shows a status indicator while all other fields get audit icons."
+              of-type="SingleLine.Text"
+              usage="bound"
+              required="true" />
+
+    <!--
+      CONFIG WEB RESOURCE (optional):
+      Logical name of a JSON web resource containing custom configuration.
+      Allows overriding default labels, page sizes, visible operations, etc.
+      If omitted, sensible defaults are used (see models/IConfig.ts).
+    -->
+    <property name="configWebResourceName"
+              display-name-key="Config Web Resource"
+              description-key="Logical name of JSON config web resource (optional — defaults apply if omitted)"
+              of-type="SingleLine.Text"
+              usage="input"
+              required="false" />
+
+    <!--
+      PAGE SIZE (optional):
+      Number of audit entries to load per page in the side panel.
+      Overrides the config web resource value if both are set.
+      Default: 25.
+    -->
+    <property name="pageSize"
+              display-name-key="Page Size"
+              description-key="Number of audit entries per page (default 25)"
+              of-type="Whole.None"
+              usage="input"
+              required="false" />
+
+    <resources>
+      <code path="index.ts" order="1"/>
+      <img path="img/default.png" />
+      <!-- React 16.14.0 provided by the platform for virtual controls -->
+      <platform-library name="React" version="16.14.0" />
+    </resources>
+
+    <feature-usage>
+      <!-- WebAPI is required for loading config web resources -->
+      <uses-feature name="WebAPI" required="true" />
+    </feature-usage>
+  </control>
+</manifest>
