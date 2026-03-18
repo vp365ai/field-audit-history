@@ -4,10 +4,10 @@
 
 // Define IInputs and IOutputs Type. They should match with ControlManifest.
 export interface IInputs {
-    boundField: ComponentFramework.PropertyTypes.StringProperty;
+    boundField: ComponentFramework.PropertyTypes.Property;
     configWebResourceName: ComponentFramework.PropertyTypes.StringProperty;
     pageSize: ComponentFramework.PropertyTypes.WholeNumberProperty;
 }
 export interface IOutputs {
-    boundField?: string;
+    boundField?: any;
 }

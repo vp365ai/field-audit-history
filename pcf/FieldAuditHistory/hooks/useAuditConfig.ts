@@ -3,7 +3,7 @@
 import * as React from "react";
 import { IInputs } from "../generated/ManifestTypes";
 import { DataverseService } from "../services/DataverseService";
-import { IAuditConfig, ITableConfig, DEFAULT_CONFIG } from "../models/IConfig";
+import { IAuditConfig, ITableConfig, DEFAULT_CONFIG, AuditStatusKind } from "../models/IConfig";
 import { EntityContext } from "./loadAuditData";
 
 export interface UseAuditConfigReturn {
@@ -12,6 +12,7 @@ export interface UseAuditConfigReturn {
     displayNameMap: Record<string, string>;
     auditedFields: Set<string> | null;
     metadataLoading: boolean;
+    auditStatus: AuditStatusKind;
 }
 
 /**
@@ -36,10 +37,12 @@ export function useAuditConfig(
         string
     > | null>(null);
     const [metadataLoading, setMetadataLoading] = React.useState(true);
+    const [auditStatus, setAuditStatus] = React.useState<AuditStatusKind>("loading");
 
     React.useEffect(() => {
         if (!entityContext) {
             setMetadataLoading(false);
+            setAuditStatus("ok");
             return;
         }
 
@@ -49,13 +52,15 @@ export function useAuditConfig(
             try {
                 const configName =
                     context.parameters.configWebResourceName?.raw;
-                const [loadedConfig, fields] = await Promise.all([
+                const [loadedConfig, fields, orgEnabled, tableEnabled] = await Promise.all([
                     configName
                         ? service.loadConfig(context.webAPI, configName)
                         : Promise.resolve(DEFAULT_CONFIG),
                     service.getAuditEnabledAttributes(
                         entityContext.entityTypeName
                     ),
+                    service.getOrgAuditEnabled(),
+                    service.getEntityAuditEnabled(entityContext.entityTypeName),
                 ]);
 
                 if (cancelled) return;
@@ -75,9 +80,40 @@ export function useAuditConfig(
                 } else {
                     setAuditedFields(null);
                 }
+
+                // Determine audit status in priority order
+                if (!orgEnabled) {
+                    setAuditStatus("orgAuditDisabled");
+                } else if (!tableEnabled) {
+                    setAuditStatus("tableAuditDisabled");
+                } else if (fields !== null && fields.length === 0) {
+                    setAuditStatus("noAuditedFields");
+                } else {
+                    // Check for empty audit records with a lightweight probe
+                    try {
+                        const entitySetName = await service.getEntitySetName(
+                            entityContext.entityTypeName
+                        );
+                        if (cancelled) return;
+                        const sample = await service.getRecordAuditHistory(
+                            entitySetName,
+                            entityContext.entityId,
+                            1,
+                            1,
+                        );
+                        if (cancelled) return;
+                        setAuditStatus(
+                            sample.totalRecordCount === 0 ? "noAuditRecords" : "ok"
+                        );
+                    } catch {
+                        // Fail-open: if we can't check, assume ok
+                        if (!cancelled) setAuditStatus("ok");
+                    }
+                }
             } catch {
                 if (!cancelled) {
                     setAuditedFields(null);
+                    setAuditStatus("error");
                 }
             } finally {
                 if (!cancelled) {
@@ -91,5 +127,5 @@ export function useAuditConfig(
         };
     }, [entityContext, context, service]);
 
-    return { config, tableConfig, displayNameMap, auditedFields, metadataLoading };
+    return { config, tableConfig, displayNameMap, auditedFields, metadataLoading, auditStatus };
 }

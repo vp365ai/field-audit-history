@@ -4,9 +4,43 @@ import { AuditHistoryApp, IAuditHistoryAppProps } from "../components/AuditHisto
 import {
     createMockContext,
     mockAuditEnabledAttributesResponse,
+    mockOrgAuditResponse,
+    mockEntityAuditSettingResponse,
+    mockEntitySetNameResponse,
     mockAuditResponse,
     createAuditEntries,
 } from "./helpers";
+
+/**
+ * Sets up all fetch mocks needed for a full init cycle.
+ * The hook now makes parallel calls: attributes, org audit, entity audit,
+ * then sequential: entity set name, record audit sample.
+ */
+function mockFullInit(options: {
+    fields?: string[];
+    orgEnabled?: boolean;
+    tableEnabled?: boolean;
+    hasRecords?: boolean;
+} = {}) {
+    const {
+        fields = ["emailaddress1"],
+        orgEnabled = true,
+        tableEnabled = true,
+        hasRecords = true,
+    } = options;
+    mockAuditEnabledAttributesResponse(fields);
+    mockOrgAuditResponse(orgEnabled);
+    mockEntityAuditSettingResponse(tableEnabled);
+    // Only mock entity set name + record audit if we'll reach the probe
+    if (orgEnabled && tableEnabled && fields.length > 0) {
+        mockEntitySetNameResponse("contacts");
+        mockAuditResponse(
+            hasRecords ? createAuditEntries(1) : [],
+            hasRecords ? 1 : 0,
+            false,
+        );
+    }
+}
 
 // Mock ReactDOM.createPortal to render inline for testing
 jest.mock("react-dom", () => {
@@ -51,7 +85,7 @@ describe("AuditHistoryApp", () => {
     });
 
     it("should render status indicator with loading state initially", () => {
-        mockAuditEnabledAttributesResponse(["emailaddress1"]);
+        mockFullInit();
 
         renderApp();
 
@@ -59,7 +93,7 @@ describe("AuditHistoryApp", () => {
     });
 
     it("should show audit tracking status after metadata loads", async () => {
-        mockAuditEnabledAttributesResponse(["emailaddress1", "telephone1"]);
+        mockFullInit({ fields: ["emailaddress1", "telephone1"] });
 
         renderApp();
 
@@ -69,7 +103,7 @@ describe("AuditHistoryApp", () => {
     });
 
     it("should render View All link", async () => {
-        mockAuditEnabledAttributesResponse(["emailaddress1"]);
+        mockFullInit();
 
         renderApp();
 
@@ -79,7 +113,7 @@ describe("AuditHistoryApp", () => {
     });
 
     it("should open Deep Dive panel when status indicator is clicked", async () => {
-        mockAuditEnabledAttributesResponse(["emailaddress1"]);
+        mockFullInit();
 
         renderApp();
 
@@ -99,7 +133,7 @@ describe("AuditHistoryApp", () => {
     });
 
     it("should open Deep Dive when View All is clicked", async () => {
-        mockAuditEnabledAttributesResponse(["emailaddress1"]);
+        mockFullInit();
 
         renderApp();
 
@@ -119,9 +153,11 @@ describe("AuditHistoryApp", () => {
     });
 
     it("should handle metadata loading failure gracefully", async () => {
-        (global.fetch as jest.Mock).mockResolvedValueOnce({
+        // Attributes fail, org and entity audit fail-open
+        (global.fetch as jest.Mock).mockResolvedValue({
             ok: false,
             status: 500,
+            statusText: "Error",
             json: () => Promise.resolve({}),
         });
 
@@ -133,7 +169,7 @@ describe("AuditHistoryApp", () => {
     });
 
     it("should have accessible status indicator with role=button", async () => {
-        mockAuditEnabledAttributesResponse(["emailaddress1"]);
+        mockFullInit();
 
         renderApp();
 
@@ -148,7 +184,7 @@ describe("AuditHistoryApp", () => {
     });
 
     it("should open Deep Dive when Enter key is pressed on status indicator", async () => {
-        mockAuditEnabledAttributesResponse(["emailaddress1"]);
+        mockFullInit();
 
         renderApp();
 
@@ -169,7 +205,7 @@ describe("AuditHistoryApp", () => {
     });
 
     it("should open Deep Dive when Space key is pressed on status indicator", async () => {
-        mockAuditEnabledAttributesResponse(["emailaddress1"]);
+        mockFullInit();
 
         renderApp();
 
@@ -186,6 +222,61 @@ describe("AuditHistoryApp", () => {
 
         await waitFor(() => {
             expect(screen.getByText("Record Audit History")).toBeInTheDocument();
+        });
+    });
+
+    // ========================================================================
+    // Audit status messages
+    // ========================================================================
+    it("should show org audit disabled message", async () => {
+        mockFullInit({ orgEnabled: false });
+
+        renderApp();
+
+        await waitFor(() => {
+            expect(screen.getByText(/Auditing is not enabled for this environment/)).toBeInTheDocument();
+        });
+        expect(screen.queryByText(/Audit tracking/)).not.toBeInTheDocument();
+    });
+
+    it("should show table audit disabled message", async () => {
+        mockFullInit({ tableEnabled: false });
+
+        renderApp();
+
+        await waitFor(() => {
+            expect(screen.getByText(/Auditing is not enabled for this table/)).toBeInTheDocument();
+        });
+    });
+
+    it("should show no audited fields message", async () => {
+        mockFullInit({ fields: [] });
+
+        renderApp();
+
+        await waitFor(() => {
+            expect(screen.getByText(/No fields on this table have auditing enabled/)).toBeInTheDocument();
+        });
+    });
+
+    it("should show no audit records message", async () => {
+        mockFullInit({ hasRecords: false });
+
+        renderApp();
+
+        await waitFor(() => {
+            expect(screen.getByText(/no changes have been recorded yet/)).toBeInTheDocument();
+        });
+    });
+
+    it("should show normal status when auditing is fully configured", async () => {
+        mockFullInit();
+
+        renderApp();
+
+        await waitFor(() => {
+            expect(screen.getByText(/Audit tracking/)).toBeInTheDocument();
+            expect(screen.getByText(/View All/)).toBeInTheDocument();
         });
     });
 });

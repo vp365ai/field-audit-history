@@ -12,6 +12,8 @@ export function createMockService(): jest.Mocked<DataverseService> {
         getRecordAuditHistory: jest.fn(),
         getAttributeDisplayNames: jest.fn().mockReturnValue({}),
         restoreFieldValue: jest.fn().mockResolvedValue(undefined),
+        getOrgAuditEnabled: jest.fn().mockResolvedValue(true),
+        getEntityAuditEnabled: jest.fn().mockResolvedValue(true),
     } as unknown as jest.Mocked<DataverseService>;
 }
 
@@ -180,6 +182,14 @@ const TEST_DISPLAY_NAMES: Record<string, string> = {
     contoso_primaryrole: "Primary Role",
     contoso_hourlyrate: "Hourly Rate",
 };
+
+export function mockOrgAuditResponse(enabled: boolean): void {
+    mockFetchResponse({ value: [{ isauditenabled: enabled }] });
+}
+
+export function mockEntityAuditSettingResponse(enabled: boolean): void {
+    mockFetchResponse({ IsAuditEnabled: { Value: enabled } });
+}
 
 export function mockAuditEnabledAttributesResponse(fields: string[]): void {
     mockFetchResponse({

@@ -4,6 +4,19 @@
  * Per-table field visibility configuration.
  * Controls which fields on a specific table get audit history icons.
  */
+/**
+ * Discriminated status for audit readiness detection.
+ * Evaluated in priority order during init.
+ */
+export type AuditStatusKind =
+    | "loading"
+    | "ok"
+    | "orgAuditDisabled"
+    | "tableAuditDisabled"
+    | "noAuditedFields"
+    | "noAuditRecords"
+    | "error";
+
 export interface ITableConfig {
     /**
      * Field selection mode:
@@ -177,6 +190,18 @@ export interface IAuditConfig {
 
         /** Export CSV button label */
         exportButtonLabel: string;
+
+        /** Status: environment auditing not enabled */
+        statusOrgAuditDisabled: string;
+
+        /** Status: table auditing not enabled */
+        statusTableAuditDisabled: string;
+
+        /** Status: no fields have auditing enabled */
+        statusNoAuditedFields: string;
+
+        /** Status: auditing active but no records yet */
+        statusNoAuditRecords: string;
     };
 }
 
@@ -240,5 +265,9 @@ export const DEFAULT_CONFIG: IAuditConfig = {
         copySuccessLabel: "Copied!",
         copySummaryLabel: "Copy summary",
         exportButtonLabel: "Export CSV",
+        statusOrgAuditDisabled: "Auditing is not enabled for this environment. Go to Settings \u203a Auditing \u203a Global Audit Settings to enable it.",
+        statusTableAuditDisabled: "Auditing is not enabled for this table. Enable it in table properties \u203a 'Audit changes to its data'.",
+        statusNoAuditedFields: "No fields on this table have auditing enabled. Enable auditing on individual columns in column properties.",
+        statusNoAuditRecords: "Audit tracking is active but no changes have been recorded yet for this record.",
     },
 };

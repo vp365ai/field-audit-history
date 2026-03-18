@@ -18,7 +18,7 @@ import {
     MessageBarType,
 } from "@fluentui/react";
 import { IAuditEntry, IFieldChange } from "../models/IAuditEntry";
-import { IAuditConfig } from "../models/IConfig";
+import { IAuditConfig, AuditStatusKind } from "../models/IConfig";
 import { colors, operationColors } from "../utils/theme";
 
 export interface IQuickPeekCalloutProps {
@@ -54,6 +54,9 @@ export interface IQuickPeekCalloutProps {
 
     /** Called when user copies a value */
     onCopy?: (value: string) => void;
+
+    /** Current audit readiness status — shown in empty state if not "ok" */
+    auditStatus?: AuditStatusKind;
 }
 
 const calloutContentClass = mergeStyles({
@@ -153,6 +156,7 @@ export const QuickPeekCallout: React.FC<IQuickPeekCalloutProps> = ({
     onRetry,
     onRestore,
     onCopy,
+    auditStatus,
 }) => {
     // Optional user filter
     const [selectedUser, setSelectedUser] = React.useState<string>("");
@@ -266,11 +270,19 @@ export const QuickPeekCallout: React.FC<IQuickPeekCalloutProps> = ({
                     </Stack>
                 )}
 
-                {/* Empty state */}
+                {/* Empty state — show audit status message if misconfigured */}
                 {!loading && !error && entries.length === 0 && (
                     <Stack horizontalAlign="center" tokens={{ padding: "20px 16px" }}>
                         <Text styles={{ root: { color: colors.neutralSecondary, fontSize: 13 } }}>
-                            {config.labels.quickPeekNoChanges}
+                            {auditStatus === "orgAuditDisabled"
+                                ? config.labels.statusOrgAuditDisabled
+                                : auditStatus === "tableAuditDisabled"
+                                ? config.labels.statusTableAuditDisabled
+                                : auditStatus === "noAuditedFields"
+                                ? config.labels.statusNoAuditedFields
+                                : auditStatus === "noAuditRecords"
+                                ? config.labels.statusNoAuditRecords
+                                : config.labels.quickPeekNoChanges}
                         </Text>
                     </Stack>
                 )}

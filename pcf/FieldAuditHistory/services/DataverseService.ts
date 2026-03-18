@@ -29,6 +29,16 @@ interface EntityDefinitionResponse {
     EntitySetName: string;
 }
 
+/** Response from organizations query for audit setting */
+interface OrgAuditSettingResponse {
+    value: { isauditenabled?: boolean }[];
+}
+
+/** Response from EntityDefinitions for IsAuditEnabled check */
+interface EntityAuditSettingResponse {
+    IsAuditEnabled?: { Value: boolean };
+}
+
 /** Single attribute metadata entry from EntityDefinitions/.../Attributes */
 interface AttributeMetadataEntry {
     LogicalName: string;
@@ -147,6 +157,45 @@ export class DataverseService {
      */
     getAttributeDisplayNames(): Record<string, string> {
         return this.attributeDisplayNames;
+    }
+
+    /**
+     * Checks whether org-level auditing is enabled.
+     * Queries the organization entity for isauditenabled.
+     * Fails open (returns true) on any error to avoid false-positive messages.
+     */
+    async getOrgAuditEnabled(): Promise<boolean> {
+        try {
+            const response = await fetch(
+                `/api/data/v9.2/organizations?$select=isauditenabled&$top=1`,
+                { headers: HEADERS }
+            );
+            if (!response.ok) return true;
+            const data = (await response.json()) as OrgAuditSettingResponse;
+            return data.value?.[0]?.isauditenabled !== false;
+        } catch {
+            return true;
+        }
+    }
+
+    /**
+     * Checks whether table-level auditing is enabled for a specific entity.
+     * Queries EntityDefinitions for the IsAuditEnabled managed property.
+     * Fails open (returns true) on any error.
+     */
+    async getEntityAuditEnabled(entityLogicalName: string): Promise<boolean> {
+        try {
+            DataverseService.validateLogicalName(entityLogicalName, "entity logical name");
+            const response = await fetch(
+                `/api/data/v9.2/EntityDefinitions(LogicalName='${entityLogicalName}')?$select=IsAuditEnabled`,
+                { headers: HEADERS }
+            );
+            if (!response.ok) return true;
+            const data = (await response.json()) as EntityAuditSettingResponse;
+            return data.IsAuditEnabled?.Value !== false;
+        } catch {
+            return true;
+        }
     }
 
     /**

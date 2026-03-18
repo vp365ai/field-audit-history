@@ -14,6 +14,7 @@ import {
     useQuickPeek,
     useRestore,
 } from "../hooks";
+import { AuditStatusKind } from "../models/IConfig";
 import { RestoreConfirmDialog } from "./RestoreConfirmDialog";
 import { exportAuditCsv } from "../utils/exportCsv";
 import { colors } from "../utils/theme";
@@ -64,6 +65,34 @@ const viewAllLinkStyles = {
     },
 };
 
+const infoIconStyles = {
+    root: {
+        color: colors.neutralSecondary,
+        fontSize: 14,
+    },
+};
+
+const infoTextStyles = {
+    root: {
+        fontSize: 12,
+        color: colors.neutralSecondary,
+        fontStyle: "italic" as const,
+    },
+};
+
+function getStatusMessage(
+    status: AuditStatusKind,
+    labels: { statusOrgAuditDisabled: string; statusTableAuditDisabled: string; statusNoAuditedFields: string; statusNoAuditRecords: string },
+): string | null {
+    switch (status) {
+        case "orgAuditDisabled": return labels.statusOrgAuditDisabled;
+        case "tableAuditDisabled": return labels.statusTableAuditDisabled;
+        case "noAuditedFields": return labels.statusNoAuditedFields;
+        case "noAuditRecords": return labels.statusNoAuditRecords;
+        default: return null;
+    }
+}
+
 export const AuditHistoryApp: React.FC<IAuditHistoryAppProps> = ({
     context,
     hostFieldLogicalName,
@@ -80,7 +109,10 @@ export const AuditHistoryApp: React.FC<IAuditHistoryAppProps> = ({
         displayNameMap,
         auditedFields,
         metadataLoading,
+        auditStatus,
     } = useAuditConfig(context, entityContext, serviceRef.current);
+
+    const statusMessage = getStatusMessage(auditStatus, config.labels);
 
     // Hook 3: Portal injection
     const { portalTargets } = usePortalInjection(
@@ -177,6 +209,13 @@ export const AuditHistoryApp: React.FC<IAuditHistoryAppProps> = ({
                         labelPosition="right"
                         styles={{ label: statusTextStyles.root }}
                     />
+                ) : statusMessage ? (
+                    <>
+                        <Icon iconName="Info" styles={infoIconStyles} />
+                        <Text styles={infoTextStyles}>
+                            {statusMessage}
+                        </Text>
+                    </>
                 ) : (
                     <>
                         <Icon
@@ -236,6 +275,7 @@ export const AuditHistoryApp: React.FC<IAuditHistoryAppProps> = ({
                     onRetry={quickPeek.handleQuickPeekRetry}
                     onRestore={restore.requestRestore}
                     onCopy={handleCopy}
+                    auditStatus={auditStatus}
                 />
             )}
 
@@ -268,6 +308,7 @@ export const AuditHistoryApp: React.FC<IAuditHistoryAppProps> = ({
                 onRestore={restore.requestRestore}
                 onCopy={handleCopy}
                 onExport={handleExport}
+                auditStatus={auditStatus}
             />
 
             {/* RESTORE CONFIRMATION DIALOG */}

@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.4] - 2026-03-17
+
+### Added
+- **Audit status messages** — clear, informative messages when audit isn't fully configured:
+  - Environment auditing not enabled (org-level `isauditenabled` check)
+  - Table auditing not enabled (entity metadata `IsAuditEnabled` check)
+  - No fields have auditing enabled (empty audit-enabled attribute list)
+  - Auditing active but no changes recorded yet (lightweight record probe)
+- New service methods: `getOrgAuditEnabled()`, `getEntityAuditEnabled()`
+- `AuditStatusKind` type for discriminated status handling
+- Four new configurable labels in `labels` section for status messages
+- Status messages also shown in Quick Peek callout and Deep Dive panel empty states
+- Host field now accepts multiple field types (Text, TextArea, Multi-line, Whole Number, Yes/No)
+- 20 new unit tests covering all status detection scenarios
+
 ## [3.4.2] - 2026-03-16
 
 ### Changed
@@ -88,6 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial public release - basic audit history panel for Dynamics 365
 
+[3.4.4]: https://github.com/vp365ai/FieldAuditHistory/compare/v3.4.2...v3.4.4
 [3.4.2]: https://github.com/vp365ai/FieldAuditHistory/compare/v3.4.1...v3.4.2
 [3.4.1]: https://github.com/vp365ai/FieldAuditHistory/compare/v3.4.0...v3.4.1
 [3.4.0]: https://github.com/vp365ai/FieldAuditHistory/compare/v3.3.0...v3.4.0

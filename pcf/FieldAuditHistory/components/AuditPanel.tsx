@@ -13,7 +13,7 @@ import {
     Link,
 } from "@fluentui/react";
 import { IAuditEntry, IFieldChange } from "../models/IAuditEntry";
-import { IAuditConfig, IFilterState } from "../models/IConfig";
+import { IAuditConfig, IFilterState, AuditStatusKind } from "../models/IConfig";
 import { AuditTimeline } from "./AuditTimeline";
 import { AuditFilterBar } from "./AuditFilterBar";
 import { colors } from "../utils/theme";
@@ -55,6 +55,8 @@ export interface IAuditPanelProps {
     onCopy?: (value: string) => void;
     /** Called when user clicks Export CSV */
     onExport?: () => void;
+    /** Current audit readiness status — shown in empty state if not "ok" */
+    auditStatus?: AuditStatusKind;
 }
 
 export const AuditPanel: React.FC<IAuditPanelProps> = ({
@@ -81,6 +83,7 @@ export const AuditPanel: React.FC<IAuditPanelProps> = ({
     onRestore,
     onCopy,
     onExport,
+    auditStatus,
 }) => {
     const hasActiveFilters =
         filterState.selectedFields.length > 0 ||
@@ -184,10 +187,18 @@ export const AuditPanel: React.FC<IAuditPanelProps> = ({
                     </Stack>
                 )}
 
-                {/* Empty state */}
+                {/* Empty state — show audit status message if misconfigured */}
                 {!loading && !error && entries.length === 0 && (
                     <MessageBar messageBarType={MessageBarType.info}>
-                        {config.labels.noRecordsMessage}
+                        {auditStatus === "orgAuditDisabled"
+                            ? config.labels.statusOrgAuditDisabled
+                            : auditStatus === "tableAuditDisabled"
+                            ? config.labels.statusTableAuditDisabled
+                            : auditStatus === "noAuditedFields"
+                            ? config.labels.statusNoAuditedFields
+                            : auditStatus === "noAuditRecords"
+                            ? config.labels.statusNoAuditRecords
+                            : config.labels.noRecordsMessage}
                     </MessageBar>
                 )}
 

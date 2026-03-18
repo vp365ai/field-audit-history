@@ -6,6 +6,8 @@ import {
     mockEntitySetNameResponse,
     mockAuditResponse,
     mockAuditEnabledAttributesResponse,
+    mockOrgAuditResponse,
+    mockEntityAuditSettingResponse,
     createAuditEntries,
     createFieldChange,
     createLookupFieldChange,
@@ -104,6 +106,69 @@ describe("DataverseService", () => {
             const result = await service.getAuditEnabledAttributes("contact");
 
             expect(result).toBeNull();
+        });
+    });
+
+    // ========================================================================
+    // getOrgAuditEnabled
+    // ========================================================================
+    describe("getOrgAuditEnabled", () => {
+        it("should return true when org audit is enabled", async () => {
+            mockOrgAuditResponse(true);
+            const result = await service.getOrgAuditEnabled();
+            expect(result).toBe(true);
+        });
+
+        it("should return false when org audit is disabled", async () => {
+            mockOrgAuditResponse(false);
+            const result = await service.getOrgAuditEnabled();
+            expect(result).toBe(false);
+        });
+
+        it("should return true on HTTP error (fail-open)", async () => {
+            mockFetchResponse({}, false, 500);
+            const result = await service.getOrgAuditEnabled();
+            expect(result).toBe(true);
+        });
+
+        it("should return true on network error (fail-open)", async () => {
+            (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("Network error"));
+            const result = await service.getOrgAuditEnabled();
+            expect(result).toBe(true);
+        });
+    });
+
+    // ========================================================================
+    // getEntityAuditEnabled
+    // ========================================================================
+    describe("getEntityAuditEnabled", () => {
+        it("should return true when entity audit is enabled", async () => {
+            mockEntityAuditSettingResponse(true);
+            const result = await service.getEntityAuditEnabled("contact");
+            expect(result).toBe(true);
+        });
+
+        it("should return false when entity audit is disabled", async () => {
+            mockEntityAuditSettingResponse(false);
+            const result = await service.getEntityAuditEnabled("contact");
+            expect(result).toBe(false);
+        });
+
+        it("should return true on HTTP error (fail-open)", async () => {
+            mockFetchResponse({}, false, 500);
+            const result = await service.getEntityAuditEnabled("contact");
+            expect(result).toBe(true);
+        });
+
+        it("should return true on network error (fail-open)", async () => {
+            (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("Network error"));
+            const result = await service.getEntityAuditEnabled("contact");
+            expect(result).toBe(true);
+        });
+
+        it("should validate entity logical name", async () => {
+            const result = await service.getEntityAuditEnabled("INVALID-NAME!");
+            expect(result).toBe(true); // fail-open on validation error
         });
     });
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!--
   ============================================================================
-  ControlManifest.Input.xml — vp365.ai | Field Audit History (v3.4.2)
+  ControlManifest.Input.xml — vp365.ai | Field Audit History (v3.4.4)
   ============================================================================
 
   PURPOSE:
@@ -32,7 +32,7 @@
 <manifest>
   <control namespace="vp365"
            constructor="FieldAuditHistory"
-           version="3.4.2"
+           version="3.4.4"
            display-name-key="vp365.ai | Field Audit History"
            description-key="Injects audit history icons next to all audited fields on the form. Bind to a dedicated text field to activate."
            control-type="virtual">
@@ -48,10 +48,18 @@
       Create a dedicated SingleLine.Text field (e.g., vp365_audithost) for this.
       All other fields on the form remain native and untouched.
     -->
+    <type-group name="hostFieldTypes">
+      <type>SingleLine.Text</type>
+      <type>SingleLine.TextArea</type>
+      <type>Multiple</type>
+      <type>Whole.None</type>
+      <type>TwoOptions</type>
+    </type-group>
+
     <property name="boundField"
               display-name-key="Host Field"
-              description-key="Bind to a dedicated text field — this field shows a status indicator while all other fields get audit icons."
-              of-type="SingleLine.Text"
+              description-key="Bind to a dedicated field — this field shows a status indicator while all other fields get audit icons."
+              of-type-group="hostFieldTypes"
               usage="bound"
               required="true" />
 

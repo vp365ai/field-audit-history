@@ -1,6 +1,6 @@
 # Field Audit History
 
-[![Version](https://img.shields.io/badge/version-3.4.2.0-blue)](releases/)
+[![Version](https://img.shields.io/badge/version-3.4.4.0-blue)](releases/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Dynamics%20365-purple)](https://learn.microsoft.com/en-us/power-apps/developer/component-framework/overview)
 

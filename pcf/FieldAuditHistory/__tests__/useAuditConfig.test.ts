@@ -136,6 +136,140 @@ describe("useAuditConfig", () => {
         expect(result.current.metadataLoading).toBe(false);
     });
 
+    // ========================================================================
+    // Audit status detection
+    // ========================================================================
+    it("should set auditStatus to orgAuditDisabled when org audit is off", async () => {
+        const mockContext = createMockContext();
+        const service = createMockService();
+        (service.getOrgAuditEnabled as jest.Mock).mockResolvedValue(false);
+
+        const { result } = renderHook(() =>
+            useAuditConfig(
+                mockContext as unknown as Parameters<typeof useAuditConfig>[0],
+                entityContext,
+                service,
+            )
+        );
+
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 10));
+        });
+
+        expect(result.current.auditStatus).toBe("orgAuditDisabled");
+    });
+
+    it("should set auditStatus to tableAuditDisabled when table audit is off", async () => {
+        const mockContext = createMockContext();
+        const service = createMockService();
+        (service.getEntityAuditEnabled as jest.Mock).mockResolvedValue(false);
+
+        const { result } = renderHook(() =>
+            useAuditConfig(
+                mockContext as unknown as Parameters<typeof useAuditConfig>[0],
+                entityContext,
+                service,
+            )
+        );
+
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 10));
+        });
+
+        expect(result.current.auditStatus).toBe("tableAuditDisabled");
+    });
+
+    it("should set auditStatus to noAuditedFields when field list is empty", async () => {
+        const mockContext = createMockContext();
+        const service = createMockService();
+        (service.getAuditEnabledAttributes as jest.Mock).mockResolvedValue([]);
+
+        const { result } = renderHook(() =>
+            useAuditConfig(
+                mockContext as unknown as Parameters<typeof useAuditConfig>[0],
+                entityContext,
+                service,
+            )
+        );
+
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 10));
+        });
+
+        expect(result.current.auditStatus).toBe("noAuditedFields");
+    });
+
+    it("should set auditStatus to noAuditRecords when audit API returns zero entries", async () => {
+        const mockContext = createMockContext();
+        const service = createMockService();
+        (service.getRecordAuditHistory as jest.Mock).mockResolvedValue({
+            entries: [],
+            totalRecordCount: 0,
+            moreRecords: false,
+            pagingCookie: null,
+        });
+
+        const { result } = renderHook(() =>
+            useAuditConfig(
+                mockContext as unknown as Parameters<typeof useAuditConfig>[0],
+                entityContext,
+                service,
+            )
+        );
+
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 10));
+        });
+
+        expect(result.current.auditStatus).toBe("noAuditRecords");
+    });
+
+    it("should set auditStatus to ok when everything is configured", async () => {
+        const mockContext = createMockContext();
+        const service = createMockService();
+        (service.getRecordAuditHistory as jest.Mock).mockResolvedValue({
+            entries: [{}],
+            totalRecordCount: 5,
+            moreRecords: false,
+            pagingCookie: null,
+        });
+
+        const { result } = renderHook(() =>
+            useAuditConfig(
+                mockContext as unknown as Parameters<typeof useAuditConfig>[0],
+                entityContext,
+                service,
+            )
+        );
+
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 10));
+        });
+
+        expect(result.current.auditStatus).toBe("ok");
+    });
+
+    it("should prioritize orgAuditDisabled over tableAuditDisabled", async () => {
+        const mockContext = createMockContext();
+        const service = createMockService();
+        (service.getOrgAuditEnabled as jest.Mock).mockResolvedValue(false);
+        (service.getEntityAuditEnabled as jest.Mock).mockResolvedValue(false);
+
+        const { result } = renderHook(() =>
+            useAuditConfig(
+                mockContext as unknown as Parameters<typeof useAuditConfig>[0],
+                entityContext,
+                service,
+            )
+        );
+
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 10));
+        });
+
+        expect(result.current.auditStatus).toBe("orgAuditDisabled");
+    });
+
     it("should resolve table config for the entity", async () => {
         const mockContext = createMockContext();
         const service = createMockService();
